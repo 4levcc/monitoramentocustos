@@ -1,0 +1,556 @@
+import React, { useState } from 'react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
+  PieChart, Pie, Cell, AreaChart, Area 
+} from 'recharts';
+import { 
+  TrendingUp, Users, Clock, DollarSign, PieChart as PieChartIcon, 
+  Settings, Info, FileText, ChevronRight, LayoutDashboard, Calculator,
+  Target, Briefcase, ChevronDown, ChevronUp
+} from 'lucide-react';
+
+// --- UTILITÁRIOS DE FORMATAÇÃO ---
+const formatCurrency = (value) => {
+  if (typeof value !== 'number') return 'R$ 0,00';
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const formatNumber = (value, decimals = 0) => {
+  if (typeof value !== 'number') return '0';
+  return value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+};
+
+// --- SUBCOMPONENTES ---
+
+const SidebarItem = ({ id, label, icon: Icon, activeTab, setActiveTab }) => {
+  const isActive = activeTab === id;
+  return (
+    <button
+      onClick={() => setActiveTab(id)}
+      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+        isActive ? 'bg-blue-600 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'
+      }`}
+    >
+      <Icon size={20} />
+      <span className="font-medium text-sm">{label}</span>
+    </button>
+  );
+};
+
+const Card = ({ title, value, subtitle, extraValue, icon: Icon, colorClass, isCurrency = true, customBg = "bg-white", isDark = false, onClick }) => {
+  // Mapeamento de cores para evitar interpolação dinâmica de strings que pode quebrar no ambiente
+  const getIconContainerClass = () => {
+    if (isDark) return 'bg-white bg-opacity-20 text-white';
+    const colorMap = {
+      'bg-blue-500': 'bg-blue-500 bg-opacity-10 text-blue-600',
+      'bg-blue-600': 'bg-blue-600 bg-opacity-10 text-blue-600',
+      'bg-slate-500': 'bg-slate-500 bg-opacity-10 text-slate-600',
+      'bg-orange-500': 'bg-orange-500 bg-opacity-10 text-orange-600',
+      'bg-emerald-500': 'bg-emerald-500 bg-opacity-10 text-emerald-600',
+      'bg-emerald-600': 'bg-emerald-600 bg-opacity-10 text-emerald-600',
+    };
+    return colorMap[colorClass] || 'bg-slate-100 text-slate-600';
+  };
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`p-5 rounded-xl border ${isDark ? 'border-blue-500 shadow-blue-100' : 'border-slate-200'} shadow-sm flex flex-col justify-between transition-all duration-200 ${customBg} ${onClick ? 'cursor-pointer hover:border-orange-300 hover:shadow-md active:scale-95' : ''}`}
+    >
+      <div className="flex justify-between items-start">
+        <div className={`p-2 rounded-lg ${getIconContainerClass()}`}>
+          <Icon size={20} />
+        </div>
+        {onClick && <ChevronDown size={14} className={isDark ? "text-blue-200" : "text-slate-300"} />}
+      </div>
+      <div className="mt-4">
+        <h3 className={`${isDark ? 'text-blue-100' : 'text-slate-500'} text-xs font-semibold uppercase tracking-wider`}>{title}</h3>
+        <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'} mt-1`}>
+          {isCurrency ? formatCurrency(value) : value}
+        </p>
+        {extraValue && (
+          <p className={`text-[11px] ${isDark ? 'text-blue-100' : 'text-slate-400'} font-medium opacity-80 mt-1`}>
+            {extraValue}
+          </p>
+        )}
+        {subtitle && <p className={`text-[10px] ${isDark ? 'text-blue-100/70' : 'text-slate-400'} mt-1 font-medium`}>{subtitle}</p>}
+      </div>
+    </div>
+  );
+};
+
+const Footer = () => (
+  <footer className="mt-auto py-8 border-t border-slate-200 text-center">
+    <p className="text-slate-400 text-[10px] sm:text-xs font-medium uppercase tracking-widest">
+      Desenvolvido pro INOVARE Gestão Estratégica | Gemini | Para Ambiens Consultoria Ambiental
+    </p>
+  </footer>
+);
+
+// --- COMPONENTE PRINCIPAL ---
+
+const DashboardAmbiens = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showHorasDetails, setShowHorasDetails] = useState(false);
+
+  // --- DADOS ---
+  const financeData = [
+    { month: 'Jan/26', receitas: 483800.59, despesas: 356864.67, ebitda: 126935.92 },
+    { month: 'Fev/26', receitas: 570102.14, despesas: 400960.85, ebitda: 169141.29 },
+    { month: 'Mar/26', receitas: 957353.32, despesas: 468919.43, ebitda: 488433.89 },
+    { month: 'Abr/26', receitas: 389564.04, despesas: 421890.58, ebitda: -32326.54 },
+  ];
+
+  const categories = [
+    { name: 'Execução - Estudos', value: 761359.57 },
+    { name: 'Licenciamento', value: 1046030.00 },
+    { name: 'Laudos/Pareceres', value: 218780.07 },
+    { name: 'Sustentabilidade', value: 97185.17 },
+    { name: 'Outros', value: 277465.28 },
+  ];
+
+  const personnelCosts = [
+    { name: 'Diretoria', value: 166600, color: '#1e3a8a' },
+    { name: 'Supervisão PJ', value: 169096.16, color: '#2563eb' },
+    { name: 'Técnicos PJ', value: 252080.48, color: '#3b82f6' },
+    { name: 'CLT Técnica', value: 41474.15, color: '#60a5fa' },
+    { name: 'Encargos/Benf', value: 50125.40, color: '#93c5fd' },
+  ];
+
+  const indicators = {
+    chDiretor: 743.92,
+    chSupervisao: 149.67,
+    chTecnica: 36.17,
+    chTecnicaAbs: 85.50,
+    equipe: 24,
+    horas: 9790,
+    horasMensais: 2447.5,
+    pesoMO: 29.5,
+    margemOp: 31.3
+  };
+
+  const dataHorasProdutivas = [
+    { perfil: '3. TÉCNICOS', qtd: 17, percapta: 149.6, meses: 4, brutas: 10173, aproveitamento: 88, produtivas: 8952 },
+    { perfil: '4. ESTAGIÁRIOS', qtd: 2, percapta: 149.6, meses: 4, brutas: 1197, aproveitamento: 70, produtivas: 838 },
+  ];
+
+  const dataGestaoProjetos = [
+    { perfil: '1. DIRETORIA', qtd: 1, percapta: 149.6, meses: 4, brutas: 598, aproveitamento: 40, produtivas: 239 },
+    { perfil: '2. SUPERVISÃO', qtd: 4, percapta: 149.6, meses: 4, brutas: 2394, aproveitamento: 60, produtivas: 1436 },
+  ];
+
+  const totalProd = {
+    qtd: dataHorasProdutivas.reduce((acc, curr) => acc + curr.qtd, 0),
+    brutas: dataHorasProdutivas.reduce((acc, curr) => acc + curr.brutas, 0),
+    produtivas: dataHorasProdutivas.reduce((acc, curr) => acc + curr.produtivas, 0)
+  };
+
+  const totalGestao = {
+    qtd: dataGestaoProjetos.reduce((acc, curr) => acc + curr.qtd, 0),
+    brutas: dataGestaoProjetos.reduce((acc, curr) => acc + curr.brutas, 0),
+    produtivas: dataGestaoProjetos.reduce((acc, curr) => acc + curr.produtivas, 0)
+  };
+
+  // --- RENDERIZADORES ---
+
+  const renderOverview = () => (
+    <div className="space-y-8 animate-in fade-in duration-500 pb-12">
+      <section>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <Calculator size={16} /> Metodologia Custo Hora (Jan-Abr)
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card title="CH Diretor" value={indicators.chDiretor} icon={Target} colorClass="bg-blue-500" />
+          <Card title="CH Supervisão" value={indicators.chSupervisao} icon={Briefcase} colorClass="bg-blue-500" />
+          <Card title="CH Técnica" value={indicators.chTecnica} icon={Clock} colorClass="bg-blue-500" subtitle="Custo Direto Médio" />
+          <Card 
+            title="CH Técnica Abs." 
+            value={indicators.chTecnicaAbs} 
+            icon={TrendingUp} 
+            colorClass="bg-blue-600" 
+            customBg="bg-blue-600" 
+            isDark={true}
+            subtitle="Inclui Rateio Overhead" 
+          />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <LayoutDashboard size={16} /> Indicadores de Performance
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card title="Equipe Total" value={indicators.equipe} isCurrency={false} icon={Users} colorClass="bg-slate-500" />
+          <Card 
+            title="Horas Produtivas" 
+            value={indicators.horas} 
+            isCurrency={false} 
+            icon={Settings} 
+            colorClass="bg-orange-500" 
+            extraValue={`${formatNumber(indicators.horasMensais, 1)}h / mês`}
+            subtitle="Clique para ver detalhamento" 
+            onClick={() => setShowHorasDetails(!showHorasDetails)}
+          />
+          <Card title="Peso Mão de Obra" value={`${indicators.pesoMO}%`} isCurrency={false} icon={DollarSign} colorClass="bg-emerald-500" subtitle="Sobre faturamento bruto" />
+          <Card title="Margem Operacional" value={`${indicators.margemOp}%`} isCurrency={false} icon={TrendingUp} colorClass="bg-emerald-600" subtitle="EBITDA Médio Período" />
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+            <DollarSign className="text-blue-600" size={20} />
+            Desempenho Financeiro Mensal
+          </h3>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={financeData}>
+                <defs>
+                  <linearGradient id="colorRec" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip formatter={(val) => formatCurrency(val)} />
+                <Area type="monotone" dataKey="receitas" stroke="#10b981" fillOpacity={1} fill="url(#colorRec)" name="Receitas" />
+                <Area type="monotone" dataKey="ebitda" stroke="#3b82f6" fillOpacity={0} name="EBITDA" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+            <PieChartIcon className="text-blue-600" size={20} />
+            Distribuição de Custos (Mão de Obra)
+          </h3>
+          <div className="h-80 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={personnelCosts} innerRadius={60} outerRadius={100} paddingAngle={5} dataKey="value">
+                  {personnelCosts.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(val) => formatCurrency(val)} />
+                <Legend layout="vertical" align="right" verticalAlign="middle" />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {showHorasDetails && (
+        <div className="grid grid-cols-1 gap-8 animate-in slide-in-from-top-4 duration-300">
+          <div className="bg-white rounded-xl border border-orange-200 shadow-lg shadow-orange-50 overflow-hidden">
+            <div className="px-6 py-4 border-b border-orange-100 bg-orange-50/50 flex justify-between items-center">
+              <h3 className="text-sm font-bold text-orange-800 uppercase tracking-wider flex items-center gap-2">
+                <Clock size={16} /> Horas Produtivas (Técnicos & Estagiários)
+              </h3>
+              <button onClick={() => setShowHorasDetails(false)} className="text-orange-400 hover:text-orange-600">
+                <ChevronUp size={20} />
+              </button>
+            </div>
+            <div className="p-6 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">
+                    <th className="pb-3 px-4 text-left">Perfil</th>
+                    <th className="pb-3 px-2">Qtd</th>
+                    <th className="pb-3 px-2">H/Mês P.C.</th>
+                    <th className="pb-3 px-2">Meses</th>
+                    <th className="pb-3 px-2">Horas Brutas</th>
+                    <th className="pb-3 px-2">Aprov. (%)</th>
+                    <th className="pb-3 px-4 text-right">Horas Produtivas</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm divide-y divide-slate-50">
+                  {dataHorasProdutivas.map((rowItem, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 text-center">
+                      <td className="py-4 px-4 font-bold text-slate-700 text-left">{rowItem.perfil}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.qtd}</td>
+                      <td className="py-4 px-2 text-slate-600 font-mono">{formatNumber(rowItem.percapta, 1)}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.meses}</td>
+                      <td className="py-4 px-2 text-slate-600 font-mono font-semibold">{formatNumber(rowItem.brutas)}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.aproveitamento}%</td>
+                      <td className="py-4 px-4 text-right text-slate-900 font-bold font-mono">{formatNumber(rowItem.produtivas)} h</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-orange-50/50 font-black text-orange-900 border-t-2 border-orange-100 text-center text-sm">
+                    <td className="py-4 px-4 text-left uppercase">Total Produção</td>
+                    <td className="py-4 px-2">{totalProd.qtd}</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2 font-mono">{formatNumber(totalProd.brutas)}</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-4 text-right font-mono">{formatNumber(totalProd.produtivas)} h</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-blue-200 shadow-lg shadow-blue-50 overflow-hidden">
+            <div className="px-6 py-4 border-b border-blue-100 bg-blue-50/50">
+              <h3 className="text-sm font-bold text-blue-800 uppercase tracking-wider flex items-center gap-2">
+                <Briefcase size={16} /> Carga Horária: Gestão de Projetos (Direção & Supervisão)
+              </h3>
+            </div>
+            <div className="p-6 overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">
+                    <th className="pb-3 px-4 text-left">Perfil</th>
+                    <th className="pb-3 px-2">Qtd</th>
+                    <th className="pb-3 px-2">H/Mês P.C.</th>
+                    <th className="pb-3 px-2">Meses</th>
+                    <th className="pb-3 px-2">Horas Brutas</th>
+                    <th className="pb-3 px-2">Aprov. (%)</th>
+                    <th className="pb-3 px-4 text-right">Horas Produtivas</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm divide-y divide-slate-50">
+                  {dataGestaoProjetos.map((rowItem, idx) => (
+                    <tr key={idx} className="hover:bg-slate-50/50 text-center">
+                      <td className="py-4 px-4 font-bold text-slate-700 text-left">{rowItem.perfil}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.qtd}</td>
+                      <td className="py-4 px-2 text-slate-600 font-mono">{formatNumber(rowItem.percapta, 1)}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.meses}</td>
+                      <td className="py-4 px-2 text-slate-600 font-mono font-semibold">{formatNumber(rowItem.brutas)}</td>
+                      <td className="py-4 px-2 text-slate-600">{rowItem.aproveitamento}%</td>
+                      <td className="py-4 px-4 text-right text-slate-900 font-bold font-mono">{formatNumber(rowItem.produtivas)} h</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-blue-50/50 font-black text-blue-900 border-t-2 border-blue-100 text-center text-sm">
+                    <td className="py-4 px-4 text-left uppercase">Total Gestão</td>
+                    <td className="py-4 px-2">{totalGestao.qtd}</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2 font-mono">{formatNumber(totalGestao.brutas)}</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-4 text-right font-mono">{formatNumber(totalGestao.produtivas)} h</td>
+                  </tr>
+                  <tr className="bg-slate-900 text-white font-black text-center text-sm">
+                    <td className="py-4 px-4 text-left uppercase tracking-tight">Total Ambiens S.A.</td>
+                    <td className="py-4 px-2">24</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-2 font-mono">{formatNumber(totalProd.brutas + totalGestao.brutas)}</td>
+                    <td className="py-4 px-2">-</td>
+                    <td className="py-4 px-4 text-right font-mono">{formatNumber(totalProd.produtivas + totalGestao.produtivas)} h</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderFinanceiro = () => (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <h3 className="text-lg font-bold text-slate-800">1. Resumo Financeiro</h3>
+        <p className="text-sm text-slate-500 italic">Janeiro a Abril de 2026 (Fluxo de Caixa)</p>
+      </div>
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <th className="py-4 px-6">Indicador</th>
+            <th className="py-4 px-6 text-right">Jan/26</th>
+            <th className="py-4 px-6 text-right">Fev/26</th>
+            <th className="py-4 px-6 text-right">Mar/26</th>
+            <th className="py-4 px-6 text-right">Abr/26</th>
+            <th className="py-4 px-6 text-right bg-slate-50 font-bold text-slate-900">Total</th>
+          </tr>
+        </thead>
+        <tbody className="text-sm divide-y divide-slate-100 font-mono">
+          <tr>
+            <td className="py-4 px-6 font-semibold text-emerald-600 font-sans">Receitas Totais</td>
+            {financeData.map((dataItem, idx) => <td key={idx} className="py-4 px-6 text-right">{formatCurrency(dataItem.receitas)}</td>)}
+            <td className="py-4 px-6 text-right font-bold bg-slate-50">{formatCurrency(2400820.09)}</td>
+          </tr>
+          <tr>
+            <td className="py-4 px-6 font-semibold text-red-500 font-sans">Despesas Operacionais</td>
+            {financeData.map((dataItem, idx) => <td key={idx} className="py-4 px-6 text-right">{formatCurrency(dataItem.despesas)}</td>)}
+            <td className="py-4 px-6 text-right font-bold bg-slate-50">{formatCurrency(1648635.53)}</td>
+          </tr>
+          <tr className="bg-blue-50/30 font-sans font-bold">
+            <td className="py-4 px-6 text-blue-700">EBITDA</td>
+            {financeData.map((dataItem, idx) => <td key={idx} className={`py-4 px-6 text-right font-mono ${dataItem.ebitda < 0 ? 'text-red-500' : 'text-blue-700'}`}>{formatCurrency(dataItem.ebitda)}</td>)}
+            <td className="py-4 px-6 text-right font-black text-blue-800 bg-blue-50 font-mono">{formatCurrency(752184.56)}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderMaoDeObra = () => (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+        <h3 className="text-lg font-bold text-slate-800">2. Custo Mão de Obra</h3>
+        <p className="text-sm text-slate-500">Composição Salarial e Encargos (Quadrimestre)</p>
+      </div>
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <th className="py-4 px-6">Categoria</th>
+            <th className="py-4 px-6 text-right">Total Jan-Abr</th>
+            <th className="py-4 px-6 text-right">% do Gasto</th>
+          </tr>
+        </thead>
+        <tbody className="text-sm divide-y divide-slate-100">
+          {personnelCosts.map((costItem, idx) => (
+            <tr key={idx}>
+              <td className="py-4 px-6 font-medium">{costItem.name}</td>
+              <td className="py-4 px-6 text-right font-mono">{formatCurrency(costItem.value)}</td>
+              <td className="py-4 px-6 text-right font-semibold text-slate-600">{formatNumber(costItem.value / 678976.19 * 100, 1)}%</td>
+            </tr>
+          ))}
+          <tr className="bg-slate-900 text-white font-bold uppercase tracking-tight">
+            <td className="py-4 px-6">Total Geral MO</td>
+            <td className="py-4 px-6 text-right font-mono">{formatCurrency(678976.19)}</td>
+            <td className="py-4 px-6 text-right">100%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderCategorias = () => (
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden p-8">
+      <h3 className="text-lg font-bold text-slate-800 mb-8">4. Receita por Categoria de Serviço</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={categories} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+              <XAxis type="number" hide />
+              <YAxis dataKey="name" type="category" width={140} fontSize={10} stroke="#64748b" />
+              <Tooltip formatter={(val) => formatCurrency(val)} />
+              <Bar dataKey="value" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="space-y-4">
+          {categories.map((catItem, idx) => (
+            <div key={idx} className="flex justify-between items-center p-3 rounded-lg border border-slate-100">
+              <span className="text-xs font-bold text-slate-700">{catItem.name}</span>
+              <span className="text-sm font-black text-slate-900 font-mono">{formatCurrency(catItem.value)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
+      <aside className="w-64 bg-white border-r border-slate-200 p-6 flex flex-col fixed h-full z-10 shadow-sm">
+        <div className="mb-10 px-2 text-center">
+          <div className="flex items-center justify-center space-x-2 text-blue-600 mb-1">
+            <LayoutDashboard size={24} strokeWidth={2.5} />
+            <span className="font-black text-xl tracking-tight uppercase">Ambiens</span>
+          </div>
+          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest">Inteligência Financeira</p>
+        </div>
+        <nav className="flex-1 space-y-1">
+          <SidebarItem id="overview" label="Visão Geral" icon={LayoutDashboard} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarItem id="financeiro" label="Resumo Financeiro" icon={DollarSign} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarItem id="mao-de-obra" label="Custo Mão de Obra" icon={Users} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarItem id="custo-hora" label="Custo Hora e Preço" icon={Calculator} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarItem id="detalhes" label="Detalhe Categoria" icon={FileText} activeTab={activeTab} setActiveTab={setActiveTab} />
+          <SidebarItem id="metodologia" label="Metodologia" icon={Info} activeTab={activeTab} setActiveTab={setActiveTab} />
+        </nav>
+        <div className="mt-auto pt-6 border-t border-slate-100">
+          <div className="bg-slate-900 rounded-xl p-4 text-white text-center">
+            <p className="text-xs text-slate-400 font-medium uppercase mb-1">Jan–Abr 2026</p>
+            <p className="text-sm font-bold uppercase tracking-widest">Realizado</p>
+          </div>
+        </div>
+      </aside>
+
+      <main className="flex-1 ml-64 p-8 min-h-screen flex flex-col">
+        <header className="flex justify-between items-end mb-10">
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              {activeTab === 'overview' && 'Painel de Gestão Estratégica'}
+              {activeTab === 'financeiro' && 'Análise Financeira (DRE)'}
+              {activeTab === 'mao-de-obra' && 'Composição de Custos MO'}
+              {activeTab === 'custo-hora' && 'Cálculo de Preço de Venda'}
+              {activeTab === 'detalhes' && 'Análise por Categoria'}
+              {activeTab === 'metodologia' && 'Transparência Metodológica'}
+            </h1>
+            <p className="text-slate-500 mt-1 font-medium flex items-center gap-1">Ambiens Consultoria Ambiental <ChevronRight size={14} /> {activeTab}</p>
+          </div>
+        </header>
+
+        <div className="flex-grow">
+          {activeTab === 'overview' && renderOverview()}
+          {activeTab === 'financeiro' && renderFinanceiro()}
+          {activeTab === 'mao-de-obra' && renderMaoDeObra()}
+          {activeTab === 'custo-hora' && (
+            <div className="bg-white p-8 rounded-xl border border-slate-200">
+              <h2 className="text-xl font-bold mb-8 flex items-center gap-2"><Calculator size={20} className="text-blue-600" /> Tabela de Precificação</h2>
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase font-bold text-slate-500">
+                    <th className="p-4">Perfil Profissional</th>
+                    <th className="p-4 text-right">Custo Absorvido (CH)</th>
+                    <th className="p-4 text-right bg-blue-50 text-blue-700">PV (Margem 25%)</th>
+                    <th className="p-4 text-right">PV (Margem 35%)</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  <tr className="border-b border-slate-100">
+                    <td className="p-4 font-bold">Diretoria</td>
+                    <td className="p-4 text-right font-mono">{formatCurrency(743.92)}</td>
+                    <td className="p-4 text-right bg-blue-50/30 font-bold text-blue-800 font-mono">{formatCurrency(1267.97)}</td>
+                    <td className="p-4 text-right text-slate-600 font-mono">{formatCurrency(1528.49)}</td>
+                  </tr>
+                  <tr className="border-b border-slate-100">
+                    <td className="p-4 font-bold">Supervisão</td>
+                    <td className="p-4 text-right font-mono">{formatCurrency(149.67)}</td>
+                    <td className="p-4 text-right bg-blue-50/30 font-bold text-blue-800 font-mono">{formatCurrency(255.11)}</td>
+                    <td className="p-4 text-right text-slate-600 font-mono">{formatCurrency(307.52)}</td>
+                  </tr>
+                  <tr className="border-b border-slate-100">
+                    <td className="p-4 font-bold">Técnico</td>
+                    <td className="p-4 text-right font-mono">{formatCurrency(85.50)}</td>
+                    <td className="p-4 text-right bg-blue-50/30 font-bold text-blue-800 font-mono">{formatCurrency(145.80)}</td>
+                    <td className="p-4 text-right text-slate-600 font-mono">{formatCurrency(175.92)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          {activeTab === 'detalhes' && renderCategorias()}
+          {activeTab === 'metodologia' && (
+            <div className="bg-white p-8 rounded-xl border border-slate-200 space-y-6 text-sm text-slate-600 leading-relaxed">
+              <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2"><Info size={24} /> Metodologia Ambiens</h2>
+              <section className="border-l-4 border-blue-500 pl-4 space-y-2 text-justify">
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Rateio de Overhead</h3>
+                <p>A estrutura de custos fixos é absorvida pelas horas produtivas reais identificadas no período. Isso garante que o preço de venda cubra não apenas a execução, mas a sustentabilidade da empresa.</p>
+              </section>
+              <section className="border-l-4 border-orange-500 pl-4 space-y-2 text-justify">
+                <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest">Aproveitamento Histórico</h3>
+                <p>O cálculo considera a carga horária per capita e aplica índices de aproveitamento (Técnicos 88%, Estagiários 70%, Supervisão 60% e Direção 40%), filtrando apenas as horas efetivamente vendáveis.</p>
+              </section>
+            </div>
+          )}
+        </div>
+        <Footer />
+      </main>
+    </div>
+  );
+};
+
+export default DashboardAmbiens;
